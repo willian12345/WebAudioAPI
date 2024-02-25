@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title></title>
+	<style>
+		*{
+			padding: 0;
+			margin: 0;
+		}
+	</style>
+	<script src="../Bufferloader.js"></script>
+	<script type="text/javascript">
+		// 浏览器要求必须要用户交互后才能播放音频
+		const test = async () => {
+			let context = new AudioContext();
+			const bufferList = await BufferLoader(context, []);
+			let source1 = context.createBufferSource();
+			let source2 = context.createBufferSource(); 
+			source1.buffer = bufferList[0];
+			source2.buffer = bufferList[1];
+			source1.connect(context.destination);
+			source2.connect(context.destination);
+			source1.start(0);
+			source2.start(0);
+		}
+	</script>
+</head>
+<body>
+	<button onclick="test()">测试</button>
+	
+</body>
+</html>
