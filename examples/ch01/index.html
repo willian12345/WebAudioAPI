@@ -3,19 +3,13 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title></title>
-	<style>
-		*{
-			padding: 0;
-			margin: 0;
-		}
-	</style>
+	<title>demo</title>
 	<script src="../Bufferloader.js"></script>
 	<script type="text/javascript">
 		// 浏览器要求必须要用户交互后才能播放音频
-		const test = async () => {
+		const loadAndPlay = async () => {
 			let context = new AudioContext();
-			const bufferList = await BufferLoader(context, []);
+			const bufferList = await BufferLoader(context, ['../test1.mp3', '../test2.mp3']);
 			let source1 = context.createBufferSource();
 			let source2 = context.createBufferSource(); 
 			source1.buffer = bufferList[0];
@@ -28,7 +22,14 @@
 	</script>
 </head>
 <body>
-	<button onclick="test()">测试</button>
-	
+	<div style="padding: 40px;">
+		<ul>
+			<li>注意：</li>
+			<li>需要在服务器环境下测试</li>
+			<li>可安装 https://www.npmjs.com/package/serve</li>
+			<li>浏览器不允许主动播放音视频，需要用户交互后才可以</li>
+		</ul>
+	</div>
+	<button onclick="loadAndPlay()">加载并播放</button>
 </body>
 </html>
