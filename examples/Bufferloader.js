@@ -1,5 +1,4 @@
-const fetchData = (url) => {
-  const audioCtx = new AudioContext()
+const fetchData = (context, url) => {
   return fetch(url)
   .then((response) => {
     if (!response.ok) {
@@ -7,13 +6,9 @@ const fetchData = (url) => {
     }
     return response.arrayBuffer();
   })
-  .then((buffer) => audioCtx.decodeAudioData(buffer))
+  .then((buffer) => context.decodeAudioData(buffer))
   .then((decodedData) => {
     return decodedData;
-    // const source = new AudioBufferSourceNode();
-    // source.buffer = decodedData;
-    // source.connect(audioCtx.destination);
-    // return source;
   });
 }
 const BufferLoader = async (context, urls) => {
@@ -21,7 +16,7 @@ const BufferLoader = async (context, urls) => {
   const result = [];
   
   for(let i = 0; i< urls.length; i++){
-    const r = await fetchData(urls[i]);
+    const r = await fetchData(context, urls[i]);
     result.push(r);
   }
   return result;
