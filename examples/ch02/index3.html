@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>demo</title>
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
+	<script src="../Bufferloader.js"></script>
+	<script type="text/javascript">
+		let context;
+		let source;
+		let startOffset = 0; 
+		let startTime = 0;
+		let buffer;
+		function pause() {
+			source.stop();
+			// 即使 stop 了 context.currentTime 一直在递增
+			// 所以要计算距离上次暂停时过去了多久，即累计已播放时长
+			startOffset += context.currentTime - startTime;
+		}
+		function play() {
+			if(!buffer){
+				alert('请先点击加载音频按钮')
+			}
+			source = context.createBufferSource();
+			startTime = context.currentTime;
+			source.buffer = buffer;
+			source.loop = true;
+			// 创建 gain node.
+			let gainNode = context.createGain();
+			// 连接  source 到 gain node. 
+			source.connect(gainNode);
+			// 连接  gain node 至  destination. 
+			gainNode.connect(context.destination);
+			// 5 秒后音量减半
+			gainNode.gain.setValueAtTime(0.5, context.currentTime + 5);
+			// 开始播放，但确保我们限定在 buffer 缓冲区的范围内 
+			source.start(0, startOffset % buffer.duration);
+		}
+		// 浏览器要求必须要用户交互后才能播放音频
+		const loadAudio = async () => {
+			context = new AudioContext();
+			const bufferList = await BufferLoader(context, ['../test1.mp3']);
+			buffer = bufferList[0];
+		}
+	</script>
+</head>
+<body>
+	<div style="padding: 40px;">
+		<h2>第二章 demo 3 gain node 音量调节- 5 秒后音量减半</h2>
+	</div>
+	<div style="display: flex; align-items: center; gap: 12px;">
+		<button onclick="loadAudio()">加载</button>
+		<button onclick="pause()">暂停</button>
+		<button onclick="play()">播放</button>
+	</div>
+	<hr/>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>需要在服务器环境下测试</dd>
+		<dd>可安装 https://www.npmjs.com/package/serve</dd>
+		<dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+		<dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+	</dl>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>测试音频并不代表我的音乐喜好</dd>
+		<dd>如有侵权请联系我</dd>
+	</dl>
+</body>
+</html>

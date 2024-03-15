@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>demo</title>
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
+	<script src="../Bufferloader.js"></script>
+	<script type="text/javascript">
+		let context;
+		let source;
+		let startOffset = 0; 
+		let startTime = 0;
+		let buffers = [], iterations = 2, fadeTime = 4
+
+		function createSource(buffer) {
+			if(!buffer.length){
+				alert('请先点击加载音频按钮')
+			}
+			var source = context.createBufferSource(); 
+			var gainNode = context.createGain(); 
+			source.buffer = buffer;
+			// Connect source to gain. 
+			source.connect(gainNode);
+			// Connect gain to destination. 
+			gainNode.connect(context.destination);
+			return {
+				source: source, 
+				gainNode: gainNode
+			}; 
+		}
+		function play() {
+			if(!buffers.length){
+				alert('请先点击加载音频按钮')
+			}
+			
+			var currTime = context.currentTime;
+			for (var i = 0; i < iterations; i++) {
+				for (var j = 0; j < buffers.length; j++) { 
+					var buffer = buffers[j];
+					var duration = buffer.duration;
+					var info = createSource(buffer);
+					var source = info.source;
+					var gainNode = info.gainNode;
+					// 播放开始时 渐入 增益从 0 - 1
+					gainNode.gain.linearRampToValueAtTime(0, currTime); 
+					gainNode.gain.linearRampToValueAtTime(1, currTime + fadeTime);
+					// 播放结束时增益 渐出 1 - 1
+					gainNode.gain.linearRampToValueAtTime(1, currTime + duration - fadeTime);
+					gainNode.gain.linearRampToValueAtTime(0, currTime + duration);
+					// 播放当前音频.
+					source.start(currTime);
+					// 为下次迭代累加时间
+					currTime += duration - fadeTime;
+				}
+			} 
+		}
+		// 浏览器要求必须要用户交互后才能播放音频
+		const loadAudio = async () => {
+			context = new AudioContext();
+			buffers = await BufferLoader(context, ['../test1.mp3', '../test2.mp3']);
+		}
+	</script>
+</head>
+<body>
+	<div style="padding: 40px;">
+		<h2>第二章 demo 4 linearRampToValueAtTime 音量交替渐变</h2>
+	</div>
+	<div style="display: flex; align-items: center; gap: 12px;">
+		<button onclick="loadAudio()">加载</button>
+		<button onclick="play()">播放</button>
+	</div>
+	<hr/>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>需要在服务器环境下测试</dd>
+		<dd>可安装 https://www.npmjs.com/package/serve</dd>
+		<dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+		<dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+	</dl>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>测试音频并不代表我的音乐喜好</dd>
+		<dd>如有侵权请联系我</dd>
+	</dl>
+</body>
+</html>

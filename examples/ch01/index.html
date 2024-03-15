@@ -4,6 +4,11 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>demo</title>
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
 	<script src="../Bufferloader.js"></script>
 	<script type="text/javascript">
 		// 浏览器要求必须要用户交互后才能播放音频
@@ -22,14 +27,20 @@
 	</script>
 </head>
 <body>
-	<div style="padding: 40px;">
-		<ul>
-			<li>注意：</li>
-			<li>需要在服务器环境下测试</li>
-			<li>可安装 https://www.npmjs.com/package/serve</li>
-			<li>浏览器不允许主动播放音视频，需要用户交互后才可以</li>
-		</ul>
-	</div>
+	<h2>第一章 demo</h2>
 	<button onclick="loadAndPlay()">加载并播放</button>
+	<hr/>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>需要在服务器环境下测试</dd>
+		<dd>可安装 https://www.npmjs.com/package/serve</dd>
+		<dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+		<dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+	</dl>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>测试音频并不代表我的音乐喜好</dd>
+		<dd>如有侵权请联系我</dd>
+	</dl>
 </body>
 </html>

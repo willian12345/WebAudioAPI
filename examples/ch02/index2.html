@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>demo</title>
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
+	<script src="../Bufferloader.js"></script>
+	<script type="text/javascript">
+		let context;
+		let sources;
+		let startOffset = 0; 
+		let startTime = 0;
+		let kick, snare, hihat;
+		function pause() {
+			sources.forEach(source => {
+				source.stop();	
+			});
+			// 即使 stop 了 context.currentTime 一直在递增
+			// 所以要计算距离上次暂停时过去了多久，即累计已播放时长
+			startOffset += context.currentTime - startTime;
+		}
+
+		function playSound(buffer, time){
+			console.log(time)
+			if(!buffer){
+				alert('请先点击加载音频按钮')
+			}
+			source = context.createBufferSource();
+			startTime = context.currentTime;
+			source.buffer = buffer;
+			// source.loop = true;
+			source.connect(context.destination);
+			// 开始播放，但确保我们限定在 buffer 缓冲区的范围内 
+			source.start(time);
+		}
+		function play() {
+			const eighthNoteTime = .5;
+			// 具体音乐原理不重要，重要的是反应出可对音频延时播放
+			for (var bar = 0; bar < 2; bar++) {
+				var time = startTime + bar * 8 * eighthNoteTime; 
+				// Play the bass (kick) drum on beats 1, 5 
+				playSound(kick, time);
+				playSound(kick, time + 4 * eighthNoteTime);
+				// Play the snare drum on beats 3, 7
+				playSound(snare, time + 2 * eighthNoteTime);
+				playSound(snare, time + 6 * eighthNoteTime);
+				// Play the hihat every eighth note.
+				for (var i = 0; i < 8; ++i) {
+					playSound(hihat, time + i * eighthNoteTime);
+				} 
+			}
+		}
+		// 浏览器要求必须要用户交互后才能播放音频
+		const loadAudio = async () => {
+			context = new AudioContext();
+			const bufferList = await BufferLoader(context, ['../hihat.mp3', '../kick.mp3', '../snare.mp3']);
+			hihat = bufferList[0]
+			kick = bufferList[1]
+			snare = bufferList[2]
+		}
+	</script>
+</head>
+<body>
+	<div style="padding: 40px;">
+		<h2>第二章 demo 2 动次打次</h2>
+	</div>
+	<div style="display: flex; align-items: center; gap: 12px;">
+		<button onclick="loadAudio()">加载</button>
+		<button onclick="pause()">暂停</button>
+		<button onclick="play()">播放</button>
+	</div>
+	<hr/>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>需要在服务器环境下测试</dd>
+		<dd>可安装 https://www.npmjs.com/package/serve</dd>
+		<dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+		<dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+	</dl>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>测试音频并不代表我的音乐喜好</dd>
+		<dd>如有侵权请联系我</dd>
+	</dl>
+</body>
+</html>

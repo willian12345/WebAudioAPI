@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>demo</title>
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
+	<script src="../Bufferloader.js"></script>
+	<script type="text/javascript">
+		let context;
+		let source;
+		const FREQUENCY = 2; 
+		const SCALE = 1.4;
+		const DURATION = 6;
+		let buffer;
+
+		// 手动实现的振荡器
+		function mannulOscillator(gainNode){
+			// Split the time into valueCount discrete steps.
+			var valueCount = 4096;
+			// Create a sinusoidal value curve.
+			var values = new Float32Array(valueCount); 
+			for (var i = 0; i < valueCount; i++) {
+				var percent = (i / valueCount) * DURATION*FREQUENCY;
+				values[i] = 1 + (Math.sin(percent * 2*Math.PI) * SCALE);
+				// Set the last value to one, to restore playbackRate to normal at the end. 
+				if (i == valueCount - 1) {
+					values[i] = 1;
+				}
+			}
+			// Apply it to the gain node immediately, and make it last for 6 seconds.
+			gainNode.gain.setValueCurveAtTime(values, context.currentTime, DURATION);
+
+		}
+
+		// 手动创建的振荡器播放
+		function play() {
+			if(!buffer){
+				alert('请先点击加载音频按钮')
+			}
+			if(source){
+				source.stop();
+			}
+			source = context.createBufferSource();
+			source.buffer = buffer;
+			source.loop = true;
+			gain = context.createGain(); 
+			mannulOscillator(gain);
+			source.connect(gain);
+			
+			gain.connect(context.destination);
+
+			source.start(0)
+
+		}
+		// AudioContext 自带的 createOscillator 播放
+		function play1() {
+			if(!buffer){
+				alert('请先点击加载音频按钮')
+			}
+			if(source){
+				source.stop();
+			}
+			source = context.createBufferSource();
+			source.buffer = buffer;
+			source.loop = true;
+
+			const osc = context.createOscillator();
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(2, context.currentTime); // value in hertz
+			gain = context.createGain(); 
+			gain.gain.value = SCALE;
+			source.connect(gain);
+			osc.connect(gain);
+			gain.connect(context.destination);
+
+			source.start(0)
+
+			// 振荡立即开始，2秒后结束
+			osc.start(0);
+			osc.stop(context.currentTime + DURATION);
+		}
+		// 浏览器要求必须要用户交互后才能播放音频
+		const loadAudio = async () => {
+			context = new AudioContext();
+			const buffers = await BufferLoader(context, ['../test1.mp3']);
+			buffer = buffers[0]
+		}
+	</script>
+</head>
+<body>
+	<div style="padding: 40px;">
+		<h2>第二章 demo 5 振荡器 颤音效果</h2>
+		<h4>播放开始后 6 秒去掉颤音效果</h4>
+		<div>具体的数值参数不太好调..</div>
+	</div>
+	<div style="display: flex; align-items: center; gap: 12px;">
+		<button onclick="loadAudio()">加载</button>
+		<button onclick="play()">播放1</button>
+		<button onclick="play1()">播放2</button>
+	</div>
+	<hr/>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>需要在服务器环境下测试</dd>
+		<dd>可安装 https://www.npmjs.com/package/serve</dd>
+		<dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+		<dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+	</dl>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>测试音频并不代表我的音乐喜好</dd>
+		<dd>如有侵权请联系我</dd>
+	</dl>
+</body>
+</html>
