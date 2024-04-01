@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="iframe" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>volume visualization</title>
+  </head>
+
+  <body>
+    <h1>选择一个 mp3 显示整个声音文件的音量图</h1>
+    <input type="file" id="audiofile" accept=".mp3" />
+    <canvas id="waveform" width="800" height="200"></canvas>
+    <script type="text/javascript">
+      document
+        .getElementById("audiofile")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const audioContext = new (window.AudioContext ||
+                window.webkitAudioContext)();
+              audioContext.decodeAudioData(e.target.result, function (buffer) {
+                // 获取音频缓冲区数据
+                const channelData = buffer.getChannelData(0);
+                // 绘制波形
+                drawWaveform(channelData);
+              });
+            };
+            reader.readAsArrayBuffer(file);
+          }
+        });
+
+      function drawWaveform(data) {
+        const canvas = document.getElementById("waveform"); // 获取canvas元素
+        const ctx = canvas.getContext("2d"); // 获取2D绘图上下文
+        const width = canvas.width; // canvas的宽度
+        const height = canvas.height; // canvas的高度
+        const step = Math.ceil(data.length / width); // 计算每个画布像素对应的音频样本数
+        const amp = height / 2; // 放大因子，用于控制波形在画布上的高度
+
+        ctx.fillStyle = "#fff"; // 设置填充颜色为白色
+        ctx.fillRect(0, 0, width, height); // 填充整个画布为白色
+
+        ctx.beginPath(); // 开始绘制新的路径
+        ctx.moveTo(0, amp); // 将绘图游标移动到画布中央的起始点
+
+        // 绘制波形
+        for (let i = 0; i < width; i += 4) {
+          // 遍历画布的每一个像素
+          let min = 1.0; // 初始化最小值
+          let max = -1.0; // 初始化最大值
+          ctx.moveTo(i, amp);
+          for (let j = 0; j < step; j++) {
+            // 遍历与当前像素对应的音频样本
+
+            const datum = data[i * step + j]; // 获取单个音频样本
+            if (datum < min) min = datum; // 更新最小值
+            if (datum > max) max = datum; // 更新最大值
+          }
+          ctx.moveTo(i, amp);
+          ctx.lineTo(i, (1 + min) * amp); // 绘制从当前位置到最小值的线
+          ctx.moveTo(i, amp);
+          ctx.lineTo(i, (1 + max) * amp); // 绘制从当前位置到最大值的线
+        }
+
+        ctx.stroke(); // 根据路径绘制线条
+      }
+    </script>
+  </body>
+</html>
