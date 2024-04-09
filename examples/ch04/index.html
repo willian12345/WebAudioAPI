@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>demo</title>
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
+	<script src="../Bufferloader.js"></script>
+	<script type="text/javascript">
+		let context;
+		let source;
+		let buffer;
+		const RANDOM_PLAYBACK = 10;
+		const RANDOM_VOLUME = 1;
+		function makeSource (buf){
+			const s = context.createBufferSource();
+			s.buffer = buf;
+			const gain = context.createGain(); 
+			s.connect(gain);
+			s.connect(context.destination);
+			return s;
+		}
+		function shootRound(numberOfRounds, timeBetweenRounds) {
+			var time = context.currentTime;
+			// 使用同一个 buffer 实现快速连续播放多种音效
+			for (var i = 0; i < numberOfRounds; i++) {
+				var source = makeSource(buffer);
+				source.playbackRate.value = 1 + Math.random() * RANDOM_PLAYBACK; 
+				// 这里修改了源文源码的实现，更好的体现同时播放
+				source.start(timeBetweenRounds + Math.random() * RANDOM_VOLUME);
+			} 
+		}
+
+		// 手动创建的振荡器播放
+		function play() {
+			if(!buffer){
+				alert('请先点击加载音频按钮')
+			}
+			shootRound(12, 2);
+		}
+		// 浏览器要求必须要用户交互后才能播放音频
+		const loadAudio = async () => {
+			context = new AudioContext();
+			const buffers = await BufferLoader(context, ['../shoot-short.mp3']);
+			buffer = buffers[0]
+		}
+	</script>
+</head>
+<body>
+	<div style="padding: 40px;">
+		<h2>第四章 音调与频域 demo</h2>
+	</div>
+	<div style="display: flex; align-items: center; gap: 12px;">
+		<button onclick="loadAudio()">加载</button>
+		<button onclick="play()">播放</button>
+	</div>
+	<hr/>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>需要在服务器环境下测试</dd>
+		<dd>可安装 https://www.npmjs.com/package/serve</dd>
+		<dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+		<dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+	</dl>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>测试音频并不代表我的音乐喜好</dd>
+		<dd>如有侵权请联系我</dd>
+	</dl>
+</body>
+</html>
