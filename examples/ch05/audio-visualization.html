@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="iframe" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>volume visualization</title>
+  </head>
+
+  <body>
+    <canvas id="visualizer" width="800" height="200"></canvas>
+    <button id="btn">开始说话并显示音频图</button>
+    <dl>
+      <dt style="color: red;">注意：</dt>
+      <dd>浏览器弹出麦克风请求时请允许</dd>
+      <dd>需要在服务器环境下测试</dd>
+      <dd>可安装 https://www.npmjs.com/package/serve</dd>
+      <dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+      <dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+    </dl>
+    <dl>
+      <dt style="color: red;">注意：</dt>
+      <dd>测试音频并不代表我的音乐喜好</dd>
+      <dd>如有侵权请联系我</dd>
+    </dl>
+    <script type="text/javascript">
+      let audioContext;
+      let mediaStream;
+      let analyser;
+      let canvas;
+      let canvasCtx;
+      let receiving = false;
+      const btn = document.getElementById('btn')
+      btn.addEventListener('click', startVisualization)
+      async function startVisualization() {
+          if(receiving && mediaStream){
+              const tracks = mediaStream.getTracks();
+              tracks.forEach(function (track) {
+                  track.stop();
+              });
+              receiving = false;
+              return;
+          }
+          try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            receiving = true;
+          
+            audioContext = new AudioContext();
+            analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            source.connect(analyser);
+
+            canvas = document.getElementById('visualizer');
+            canvasCtx = canvas.getContext('2d');
+
+            function draw() {
+                requestAnimationFrame(draw);
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+
+                canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
+                canvasCtx.beginPath();
+
+                const sliceWidth = canvas.width * 1.0 / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * canvas.height / 2;
+
+                if (i === 0) {
+                    canvasCtx.moveTo(x, y);
+                } else {
+                    canvasCtx.lineTo(x, y);
+                }
+
+                x += sliceWidth;
+                }
+
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+            }
+
+            draw();
+          } catch (error) {
+            console.error('Error accessing microphone:', error);
+          }
+      }
+    </script>
+  </body>
+</html>
