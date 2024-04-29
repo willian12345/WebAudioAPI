@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>gun-effect-demo</title>
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
+	<script src="../Bufferloader.js"></script>
+	<script type="text/javascript">
+		let context;
+		let source;
+		let buffer;
+
+		function WhiteNoiseScript() {
+			this.node = context.createScriptProcessor(1024, 1, 2); 
+			this.node.onaudioprocess = this.process;
+		}
+		WhiteNoiseScript.prototype.process = function(e) { 
+			var L = e.outputBuffer.getChannelData(0);
+			var R = e.outputBuffer.getChannelData(1);
+			for (var i = 0; i < L.length; i++) {
+				L[i] = ((Math.random() * 2) - 1);
+				R[i] = L[i]; 
+			}
+		};
+
+		function WhiteNoiseGenerated(callback) {
+			// Generate a 5 second white noise buffer.
+			var lengthInSamples = 5 * context.sampleRate;
+			var buffer = context.createBuffer(1, lengthInSamples, context.sampleRate); 
+			var data = buffer.getChannelData(0);
+			for (var i = 0; i < lengthInSamples; i++) { 
+				data[i] = ((Math.random() * 2) - 1);
+			}
+			// Create a source node from the buffer.
+			this.node = context.createBufferSource(); 
+			this.node.buffer = buffer;
+			this.node.loop = true; 
+			this.node.start(0);
+			return this;
+		}
+
+		function Envelope() {
+			this.node = context.createGain() 
+			this.node.gain.value = 0;
+			return this;
+		}
+		Envelope.prototype.addEventToQueue = function() {
+			this.node.gain.linearRampToValueAtTime(0, context.currentTime);
+			this.node.gain.linearRampToValueAtTime(1, context.currentTime + 0.001); 
+			this.node.gain.linearRampToValueAtTime(0.3, context.currentTime + 0.101); 
+			this.node.gain.linearRampToValueAtTime(0, context.currentTime + 0.500);
+		}
+		
+		function play(filterType) {
+      context = new AudioContext();
+			var noise = new WhiteNoiseGenerated();
+			var filter = context.createBiquadFilter();
+			filter.type = filterType;
+			filter.Q.value = 1;
+			filter.frequency.value = 800;
+			// Initialize multiple voices.
+			for (var i = 0; i < 5; i++) { 
+				var voice = new Envelope(); 
+				noise.node.connect(voice.node); 
+				voice.node.connect(filter); 
+				voice.addEventToQueue();
+			}
+			var gainMaster = context.createGain(); 
+			gainMaster.gain.value = 5; 
+			filter.connect(gainMaster);
+			gainMaster.connect(context.destination);
+		}
+		
+	</script>
+</head>
+<body>
+	<div style="padding: 40px;">
+		<h2>第六章 利用程序创建的不同枪声效果 demo</h2>
+	</div>
+	<div style="display: flex; align-items: center; gap: 12px;">
+    <button onclick="play('lowpass')">lowpass</button>
+    <button onclick="play('highpass')">highpass</button>
+    <button onclick="play('bandpass')">bandpass</button>
+    <button onclick="play('lowshelf')">lowshelf</button>
+    <button onclick="play('highshelf')">highshelf</button>
+    <button onclick="play('peaking')">peaking</button>
+    <button onclick="play('notch')">notch</button>
+    <button onclick="play('allpass')">allpass</button>
+	</div>
+	<hr/>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>需要在服务器环境下测试</dd>
+		<dd>可安装 https://www.npmjs.com/package/serve</dd>
+		<dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+		<dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+	</dl>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>测试音频并不代表我的音乐喜好</dd>
+		<dd>如有侵权请联系我</dd>
+	</dl>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>impulse demo</title>
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
+	<script src="../Bufferloader.js"></script>
+	<script type="text/javascript">
+		let context;
+		let source;
+		let buffer;
+		let impulseResponseBuffer = null; 
+		// 手动创建的振荡器播放
+		async function play() {
+      if(source){
+        source.stop();
+      }
+			
+			await loadAudio();
+			if(!buffer){
+				alert('请先点击加载音频按钮')
+			}
+      source = context.createBufferSource();
+			source.buffer = buffer;
+			// Make a convolver node for the impulse response. 
+			var convolver = context.createConvolver();
+			// Set the impulse response buffer. 
+			convolver.buffer = impulseResponseBuffer;
+			// Connect graph.
+			source.connect(convolver); 
+			convolver.connect(context.destination);
+      source.start(0);
+		}
+
+		
+		
+		async function loadImpulseResponse() {
+			const buffers = await BufferLoader(context, ['../impulse.wav']);
+			impulseResponseBuffer = buffers[0];
+		}
+		// 浏览器要求必须要用户交互后才能播放音频
+		const loadAudio = async () => {
+			context = new AudioContext();
+			await loadImpulseResponse();
+			const buffers = await BufferLoader(context, ['../test1.mp3']);
+			buffer = buffers[0]
+		}
+	</script>
+</head>
+<body>
+	<div style="padding: 40px;">
+		<h2>第六章 impulse demo 模拟回响效果</h2>
+	</div>
+	<div style="display: flex; align-items: center; gap: 12px;">
+    <button onclick="play()">play</button>
+	</div>
+	<hr/>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>需要在服务器环境下测试</dd>
+		<dd>可安装 https://www.npmjs.com/package/serve</dd>
+		<dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+		<dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+	</dl>
+	<dl>
+		<dt style="color: red;">注意：</dt>
+		<dd>测试音频并不代表我的音乐喜好</dd>
+		<dd>如有侵权请联系我</dd>
+	</dl>
+</body>
+</html>
