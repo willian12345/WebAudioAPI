@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="iframe" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>volume visualization</title>
+  </head>
+
+  <body>
+    <canvas id="visualizer" width="800" height="200"></canvas>
+    <button id="btn">开始说话并显示音频图</button>
+    <dl>
+      <dt style="color: red;">注意：</dt>
+      <dd>浏览器弹出麦克风请求时请允许</dd>
+      <dd>需要在服务器环境下测试</dd>
+      <dd>可安装 https://www.npmjs.com/package/serve</dd>
+      <dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+      <dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+    </dl>
+    <dl>
+      <dt style="color: red;">注意：</dt>
+      <dd>测试音频并不代表我的音乐喜好</dd>
+      <dd>如有侵权请联系我</dd>
+    </dl>
+    <script type="text/javascript">
+      let audioContext;
+      let mediaStream;
+      let analyser;
+      let canvas;
+      let canvasCtx;
+      let receiving = false;
+      const btn = document.getElementById('btn')
+      btn.addEventListener('click', startVisualization)
+      async function startVisualization() {
+          if(receiving && mediaStream){
+              const tracks = mediaStream.getTracks();
+              tracks.forEach(function (track) {
+                  track.stop();
+              });
+              receiving = false;
+              return;
+          }
+          try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            receiving = true;
+          
+            audioContext = new AudioContext();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            source.connect(analyser);
+
+            canvas = document.getElementById('visualizer');
+            canvasCtx = canvas.getContext('2d');
+
+            function draw() {
+                requestAnimationFrame(draw);
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                // analyser.getByteTimeDomainData(dataArray);
+                analyser.getByteFrequencyData(dataArray)
+
+                canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                canvasCtx.lineWidth = 10;
+                const sliceWidth = 6;
+                let gap = (canvas.width/sliceWidth)
+                const step = Math.round(bufferLength/ sliceWidth) ; // 计算每个画布像素对应的音频样本数
+                
+                const amp = canvas.height / 8; // 放大因子，用于控制波形在画布上的高度
+                canvasCtx.beginPath(); // 开始绘制新的路径
+                let x = 0;
+                let min = 128; // 初始化最小值
+                let max = -1; // 初始化最大值
+                // canvasCtx.moveTo(0, 100);
+                for( let z = 0; z<sliceWidth;z++){
+                  let start = z*step
+                  for (let i = start; i < start+step; i++) {
+                    datum = dataArray[i]
+                    if (datum > max) {
+                      max = datum; // 更新最大值
+                    }                    
+                  }
+                  max = max / 2
+                  
+                  canvasCtx.moveTo(z*gap, 100)
+                  canvasCtx.lineTo(z*gap, max + 100); // 绘制从当前位置到最小值的线
+                }
+                canvasCtx.stroke();
+            }
+
+            draw();
+          } catch (error) {
+            console.error('Error accessing microphone:', error);
+          }
+      }
+    </script>
+  </body>
+</html>

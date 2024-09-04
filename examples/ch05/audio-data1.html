@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="iframe" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>volume visualization</title>
+  </head>
+
+  <body>
+    <canvas id="visualizer" width="800" height="200"></canvas>
+    <button id="btn">开始说话并显示音频图</button>
+    <dl>
+      <dt style="color: red;">注意：</dt>
+      <dd>浏览器弹出麦克风请求时请允许</dd>
+      <dd>需要在服务器环境下测试</dd>
+      <dd>可安装 https://www.npmjs.com/package/serve</dd>
+      <dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+      <dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+    </dl>
+    <dl>
+      <dt style="color: red;">注意：</dt>
+      <dd>测试音频并不代表我的音乐喜好</dd>
+      <dd>如有侵权请联系我</dd>
+    </dl>
+    <script type="text/javascript">
+      let audioContext;
+      let mediaStream;
+      let analyser;
+      let canvas;
+      let canvasCtx;
+      let receiving = false;
+      const btn = document.getElementById('btn')
+      btn.addEventListener('click', startVisualization)
+      async function startVisualization() {
+          if(receiving && mediaStream){
+              const tracks = mediaStream.getTracks();
+              tracks.forEach(function (track) {
+                  track.stop();
+              });
+              receiving = false;
+              return;
+          }
+          try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            receiving = true;
+          
+            audioContext = new AudioContext();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            source.connect(analyser);
+
+            canvas = document.getElementById('visualizer');
+            canvasCtx = canvas.getContext('2d');
+
+            function draw() {
+                requestAnimationFrame(draw);
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                const width = canvas.width
+                const height = canvas.height
+                // analyser.getByteTimeDomainData(dataArray);
+                analyser.getByteFrequencyData(dataArray)
+                canvasCtx.clearRect(0, 0, width, height)
+                canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                canvasCtx.lineWidth = 10;
+                const sliceWidth = 20;
+                let gap = (canvas.width/sliceWidth)
+                const step = Math.round(bufferLength/ sliceWidth) ; // 计算每个画布像素对应的音频样本数
+                canvasCtx.beginPath(); // 开始绘制新的路径
+                canvasCtx.fillStyle = 'rgb(0, 255, 0)';
+                // len表示获取分析到的音频数据数组长度的
+                // 这里除以2.5是剔除不经常出现的高频的部分
+                const len = dataArray.length / 2.5
+                // barWidth表示每个波形矩形的宽度
+                // 这里除以2是为了绘制对称的波形图
+                const barWidth = canvas.width / len / 2
+                console.log(dataArray)
+                for (let i = 0; i < len; i+=1) {
+                  // data是8位数组的每个数据，因为是一个字节，即data的值都是 <= 255
+                  const data = dataArray[i] 
+                  // barHeight表示每个波形矩形的高度，值为单位长度乘canvas容器的高
+                  const barHeight = (data / 255) * height
+                  // 绘制点y
+                  const y = height - barHeight
+                  // 绘制点x1
+                  const x1 = i * barWidth + width / 2
+                  // 绘制点x2
+                  const x2 = width / 2 - (i + 1) * barWidth
+                  // 绘制右半部分波形图
+                  canvasCtx.fillRect(x1, y, barWidth - 2, barHeight)
+                  // 绘制左半部分波形图
+                  canvasCtx.fillRect(x2, y, barWidth - 2, barHeight)
+        }
+
+                // canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.fill();
+            }
+
+            draw();
+          } catch (error) {
+            console.error('Error accessing microphone:', error);
+          }
+      }
+    </script>
+  </body>
+</html>
