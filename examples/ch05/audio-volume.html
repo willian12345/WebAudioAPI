@@ -8,7 +8,7 @@
   </head>
 
   <body>
-    <canvas id="visualizer" width="800" height="200"></canvas>
+    <canvas id="visualizer" width="400" height="400"></canvas>
     <button id="btn">开始说话并显示音频图</button>
     <dl>
       <dt style="color: red;">注意：</dt>
@@ -28,7 +28,7 @@
       let mediaStream;
       let analyser;
       let canvas;
-      let canvasCtx;
+      let ctx;
       let receiving = false;
       const btn = document.getElementById('btn')
       btn.addEventListener('click', startVisualization)
@@ -52,44 +52,31 @@
             source.connect(analyser);
 
             canvas = document.getElementById('visualizer');
-            canvasCtx = canvas.getContext('2d');
+            ctx = canvas.getContext('2d');
 
             function draw() {
                 requestAnimationFrame(draw);
                 const bufferLength = analyser.frequencyBinCount;
                 const dataArray = new Uint8Array(bufferLength);
-                // analyser.getByteTimeDomainData(dataArray);
                 analyser.getByteFrequencyData(dataArray)
 
-                canvasCtx.fillStyle = 'rgb(200, 200, 200)';
-                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-                canvasCtx.lineWidth = 10;
-                const sliceWidth = 3;
-                let gap = (canvas.width/sliceWidth)
-                const step = Math.round(bufferLength/ sliceWidth) ; // 计算每个画布像素对应的音频样本数
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
-                const amp = canvas.height / 8; // 放大因子，用于控制波形在画布上的高度
-                canvasCtx.beginPath(); // 开始绘制新的路径
-                let x = 0;
-                let min = 128; // 初始化最小值
-                let max = -1; // 初始化最大值
-                const result = [];
-                for( let z = 0; z<sliceWidth;z++){
-                  let start = z*step
-                  for (let i = start; i < start+step; i++) {
-                    datum = dataArray[i]
-                    if (datum > max) {
-                      max = datum; // 更新最大值
-                    }                    
-                  }
-                  max = max / 4
-                  
-                  canvasCtx.moveTo(z*gap, 100)
-                  canvasCtx.lineTo(z*gap, max + 100); // 绘制从当前位置到最小值的线
-                  result.push(max);
+                let volume = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                  volume += dataArray[i];
                 }
-                canvasCtx.stroke();
-                console.log(result)
+                volume /= bufferLength;
+
+                ctx.beginPath();
+                ctx.arc(100, 100, volume + 50, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'green';
+                ctx.fillStyle = 'yellowgreen'
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.fill()
+                
+                console.log(`Volume: ${volume}`);
             }
 
             draw();
