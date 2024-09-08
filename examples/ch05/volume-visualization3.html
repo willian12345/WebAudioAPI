@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="iframe" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>volume visualization</title>
+  </head>
+
+  <body>
+    <h1>选择一个 mp3 显示整个声音文件的音量图</h1>
+    <input type="file" id="audiofile" accept=".mp3" />
+    <canvas id="waveform" width="800" height="200"></canvas>
+    <hr/>
+    <dl>
+      <dt style="color: red;">注意：</dt>
+      <dd>浏览器弹出麦克风请求时请允许</dd>
+      <dd>需要在服务器环境下测试</dd>
+      <dd>可安装 https://www.npmjs.com/package/serve</dd>
+      <dd>全局安装 serve 后 到 example 目录运行 "serve ." 即可启动本地服务</dd>
+      <dd>浏览器不允许主动播放音视频，需要用户交互后才可以</dd>
+    </dl>
+    <dl>
+      <dt style="color: red;">注意：</dt>
+      <dd>测试音频并不代表我的音乐喜好</dd>
+      <dd>如有侵权请联系我</dd>
+    </dl>
+    <script type="text/javascript">
+      document
+        .getElementById("audiofile")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const audioContext = new (window.AudioContext ||
+                window.webkitAudioContext)();
+              audioContext.decodeAudioData(e.target.result, function (buffer) {
+                // 获取音频缓冲区数据
+                const channelData = buffer.getChannelData(0);
+                // 绘制波形
+                drawWaveform(channelData);
+              });
+            };
+            reader.readAsArrayBuffer(file);
+          }
+        });
+
+      function drawWaveform(data) {
+        const canvas = document.getElementById("waveform"); // 获取canvas元素
+        const ctx = canvas.getContext("2d"); // 获取2D绘图上下文
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'blue'; // 设置线条颜色
+        ctx.lineWidth = 2; // 设置线条宽度
+
+        const lineSpacing = canvas.width / 4;
+        
+        const step  = Math.ceil(data.length / 4)
+        const result = [];
+        for (let i = 0; i < 4; i++) {
+          let averageValue = 0;
+          for(let j=0;j<step; j++){
+            averageValue += Math.abs(data[i*step+j] || 0);
+          }
+          const v = (averageValue/step) * 1000
+          result.push(v)
+          let x = i * 20
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, v);
+          ctx.stroke();
+        }
+
+        // 归一化处理
+        
+        let minValue = Math.min(...result);
+        let maxValue = Math.max(...result);
+
+        let normalizedNum1 = (result[0] - minValue) / (maxValue - minValue);
+        let normalizedNum2 = (result[1] - minValue) / (maxValue - minValue);
+        let normalizedNum3 = (result[2] - minValue) / (maxValue - minValue);
+        let normalizedNum4 = (result[3] - minValue) / (maxValue - minValue);
+
+        console.log(normalizedNum1, normalizedNum2, normalizedNum3, normalizedNum4);
+
+      }
+    </script>
+  </body>
+</html>
